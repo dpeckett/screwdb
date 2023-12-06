@@ -2597,9 +2597,3 @@ int btree_revert(struct btree *bt) {
 void btree_set_cache_size(struct btree *bt, unsigned int cache_size) {
   bt->max_cache = cache_size;
 }
-
-unsigned int btree_get_flags(struct btree *bt) {
-  return (bt->flags & ~BT_FIXPADDING);
-}
-
-const char *btree_get_path(struct btree *bt) { return bt->path; }

@@ -62,14 +62,6 @@ func (db *DB) SetCacheSize(cacheSize uint) {
 	C.btree_set_cache_size(db.bt, C.uint(cacheSize))
 }
 
-func (db *DB) GetFlags() uint {
-	return uint(C.btree_get_flags(db.bt))
-}
-
-func (db *DB) GetPath() string {
-	return C.GoString(C.btree_get_path(db.bt))
-}
-
 func (db *DB) Sync() error {
 	rc, err := C.btree_sync(db.bt)
 	if rc != 0 {

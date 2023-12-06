@@ -19,7 +19,6 @@
 #ifndef _btree_h_
 #define _btree_h_
 
-#include <time.h>
 #include <sys/types.h>
 #include <openssl/sha.h>
 
@@ -70,8 +69,6 @@ int btree_txn_del(struct btree *bt, struct btree_txn *txn, struct btval *key,
                   struct btval *data);
 
 void btree_set_cache_size(struct btree *bt, unsigned int cache_size);
-unsigned int btree_get_flags(struct btree *bt);
-const char *btree_get_path(struct btree *bt);
 
 struct cursor *btree_txn_cursor_open(struct btree *bt, struct btree_txn *txn);
 void btree_cursor_close(struct cursor *cursor);
