@@ -56,9 +56,7 @@ enum cursor_op {
   BT_CURSOR,       /* cursor operations */
   BT_CURSOR_EXACT, /* position at given key */
   BT_FIRST,        /* position at key, or fail */
-  BT_NEXT,
-  BT_LAST, /* not implemented */
-  BT_PREV  /* not implemented */
+  BT_NEXT
 };
 
 /* return codes */
@@ -92,7 +90,6 @@ int btree_cursor_get(struct cursor *cursor, struct btval *key,
 
 int btree_sync(struct btree *bt);
 int btree_compact(struct btree *bt);
-int btree_revert(struct btree *bt);
 
 int btree_cmp(struct btree *bt, const struct btval *a, const struct btval *b);
 

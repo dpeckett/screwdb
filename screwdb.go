@@ -80,15 +80,6 @@ func (db *DB) Compact() error {
 	return nil
 }
 
-func (db *DB) Revert() error {
-	rc, err := C.btree_revert(db.bt)
-	if rc != 0 {
-		return fmt.Errorf("revert failed: %w", err)
-	}
-
-	return nil
-}
-
 func (db *DB) Compare(a, b []byte) int {
 	cA := C.struct_btval{
 		data: C.CBytes(a),

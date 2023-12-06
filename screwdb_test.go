@@ -33,7 +33,6 @@ func TestScrewDB(t *testing.T) {
 
 	db, err := screwdb.Open(path, screwdb.NoSync, 0o644)
 	require.NoError(t, err)
-	defer db.Close()
 
 	f, err := os.Open("testdata/words.txt")
 	require.NoError(t, err)
@@ -56,6 +55,14 @@ func TestScrewDB(t *testing.T) {
 		return nil
 	})
 	require.NoError(t, err)
+
+	require.NoError(t, db.Compact())
+
+	db.Close()
+
+	db, err = screwdb.Open(path, screwdb.NoSync, 0o644)
+	require.NoError(t, err)
+	defer db.Close()
 
 	err = db.View(func(tx *screwdb.Tx) error {
 		testEntries := map[string]uint64{
