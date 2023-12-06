@@ -182,7 +182,7 @@ func (tx *Tx) Get(key []byte) ([]byte, error) {
 	return C.GoBytes(cValue.data, C.int(cValue.size)), nil
 }
 
-func (tx *Tx) Put(key, value []byte, noOverwrite bool) error {
+func (tx *Tx) Put(key, value []byte) error {
 	cKey := C.struct_btval{
 		data: C.CBytes(key),
 		size: C.ulong(len(key)),
@@ -195,12 +195,7 @@ func (tx *Tx) Put(key, value []byte, noOverwrite bool) error {
 	}
 	defer C.free(unsafe.Pointer(cValue.data))
 
-	var flags C.uint
-	if noOverwrite {
-		flags = C.BT_NOOVERWRITE
-	}
-
-	rc, err := C.btree_txn_put(tx.bt, tx.tx, &cKey, &cValue, flags)
+	rc, err := C.btree_txn_put(tx.bt, tx.tx, &cKey, &cValue)
 	if rc != 0 {
 		return fmt.Errorf("put failed: %w", err)
 	}

@@ -2367,7 +2367,7 @@ static int btree_split(struct btree *bt, struct mpage **mpp,
 }
 
 int btree_txn_put(struct btree *bt, struct btree_txn *txn, struct btval *key,
-                  struct btval *data, unsigned int flags) {
+                  struct btval *data) {
   int rc = BT_SUCCESS, exact, close_txn = 0;
   unsigned int ki;
   struct node *leaf;
@@ -2407,11 +2407,6 @@ int btree_txn_put(struct btree *bt, struct btree_txn *txn, struct btval *key,
   if (rc == BT_SUCCESS) {
     leaf = btree_search_node(bt, mp, key, &exact, &ki);
     if (leaf && exact) {
-      if (F_ISSET(flags, BT_NOOVERWRITE)) {
-        errno = EEXIST;
-        rc = BT_FAIL;
-        goto done;
-      }
       btree_del_node(bt, mp, ki);
     }
     if (leaf == NULL) { /* append if not found */

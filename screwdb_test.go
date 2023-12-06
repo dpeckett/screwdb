@@ -45,7 +45,7 @@ func TestScrewDB(t *testing.T) {
 			var value [8]byte
 			binary.LittleEndian.PutUint64(value[:], i)
 
-			if err := tx.Put([]byte(scanner.Text()), value[:], false); err != nil {
+			if err := tx.Put([]byte(scanner.Text()), value[:]); err != nil {
 				return err
 			}
 		}

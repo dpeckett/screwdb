@@ -38,8 +38,6 @@ typedef int (*bt_cmp_func)(const struct btval *a, const struct btval *b);
 typedef void (*bt_prefix_func)(const struct btval *a, const struct btval *b,
                                struct btval *sep);
 
-#define BT_NOOVERWRITE 1
-
 enum cursor_op {
   BT_CURSOR,       /* cursor operations */
   BT_CURSOR_EXACT, /* position at given key */
@@ -83,7 +81,7 @@ void btree_txn_abort(struct btree_txn *txn);
 int btree_txn_get(struct btree *bt, struct btree_txn *txn, struct btval *key,
                   struct btval *data);
 int btree_txn_put(struct btree *bt, struct btree_txn *txn, struct btval *key,
-                  struct btval *data, unsigned int flags);
+                  struct btval *data);
 int btree_txn_del(struct btree *bt, struct btree_txn *txn, struct btval *key,
                   struct btval *data);
 
