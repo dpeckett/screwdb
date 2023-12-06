@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package picokv_test
+package screwdb_test
 
 import (
 	"bufio"
@@ -24,14 +24,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/dpeckett/picokv"
+	"github.com/dpeckett/screwdb"
 	"github.com/stretchr/testify/require"
 )
 
-func TestPicoKVDB(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "picokv_test.db")
+func TestScrewDB(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "screwdb_test.db")
 
-	db, err := picokv.Open(path, picokv.NoSync, 0o644)
+	db, err := screwdb.Open(path, screwdb.NoSync, 0o644)
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -39,7 +39,7 @@ func TestPicoKVDB(t *testing.T) {
 	require.NoError(t, err)
 	defer f.Close()
 
-	err = db.Update(func(tx *picokv.Tx) error {
+	err = db.Update(func(tx *screwdb.Tx) error {
 		scanner := bufio.NewScanner(f)
 		for i := uint64(0); scanner.Scan(); i++ {
 			var value [8]byte
@@ -57,7 +57,7 @@ func TestPicoKVDB(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = db.View(func(tx *picokv.Tx) error {
+	err = db.View(func(tx *screwdb.Tx) error {
 		testEntries := map[string]uint64{
 			"bowelless":    25272,
 			"oxygenation":  136539,

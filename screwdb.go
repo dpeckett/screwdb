@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package picokv
+package screwdb
 
 // #cgo CFLAGS: -Wno-address-of-packed-member
 // #cgo LDFLAGS: -lcrypto

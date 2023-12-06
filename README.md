@@ -1,6 +1,7 @@
-# picokv
+# screwdb
 
-An absolutely miniscule key-value store for Go based on an append-only B+tree design (ala. ldapd/CouchDB).
+An absolutely miniscule key-value store for Go based on an append-only B+tree design (ala. ldapd/CouchDB). The name
+screwdb is a play on the name [boltdb](https://github.com/boltdb/bolt) as we share some common ancestry.
 
 Every additional line of code and feature will be extensively scrutinized.
 
