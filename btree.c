@@ -357,37 +357,20 @@ static void common_prefix(struct btree *bt, struct btkey *min,
     return;
   }
 
-  if (F_ISSET(bt->flags, BT_REVERSEKEY)) {
-    p1 = min->str + min->len - 1;
-    p2 = max->str + max->len - 1;
+  p1 = min->str;
+  p2 = max->str;
 
-    while (*p1 == *p2) {
-      if (p1 < min->str || p2 < max->str)
-        break;
-      p1--;
-      p2--;
-      n++;
-    }
-
-    assert(n <= (int)sizeof(pfx->str));
-    pfx->len = n;
-    bcopy(p2 + 1, pfx->str, n);
-  } else {
-    p1 = min->str;
-    p2 = max->str;
-
-    while (*p1 == *p2) {
-      if (n == min->len || n == max->len)
-        break;
-      p1++;
-      p2++;
-      n++;
-    }
-
-    assert(n <= (int)sizeof(pfx->str));
-    pfx->len = n;
-    bcopy(max->str, pfx->str, n);
+  while (*p1 == *p2) {
+    if (n == min->len || n == max->len)
+      break;
+    p1++;
+    p2++;
+    n++;
   }
+
+  assert(n <= (int)sizeof(pfx->str));
+  pfx->len = n;
+  bcopy(max->str, pfx->str, n);
 }
 
 static void remove_prefix(struct btree *bt, struct btval *key, size_t pfxlen) {
@@ -398,8 +381,7 @@ static void remove_prefix(struct btree *bt, struct btval *key, size_t pfxlen) {
           (int)key->size, (char *)key->data);
   assert(pfxlen <= key->size);
   key->size -= pfxlen;
-  if (!F_ISSET(bt->flags, BT_REVERSEKEY))
-    key->data = (char *)key->data + pfxlen;
+  key->data = (char *)key->data + pfxlen;
 }
 
 static void expand_prefix(struct btree *bt, struct mpage *mp, indx_t indx,
@@ -414,21 +396,8 @@ static void expand_prefix(struct btree *bt, struct mpage *mp, indx_t indx,
 
 static int bt_cmp(struct btree *bt, const struct btval *key1,
                   const struct btval *key2, struct btkey *pfx) {
-  if (F_ISSET(bt->flags, BT_REVERSEKEY))
-    return memnrcmp(key1->data, key1->size - pfx->len, key2->data, key2->size);
-  else
-    return memncmp((char *)key1->data + pfx->len, key1->size - pfx->len,
-                   key2->data, key2->size);
-}
-
-void btval_reset(struct btval *btv) {
-  if (btv) {
-    if (btv->mp)
-      btv->mp->ref--;
-    if (btv->free_data)
-      free(btv->data);
-    memset(btv, 0, sizeof(*btv));
-  }
+  return memncmp((char *)key1->data + pfx->len, key1->size - pfx->len,
+                  key2->data, key2->size);
 }
 
 static int mpage_cmp(struct mpage *a, struct mpage *b) {
@@ -1230,13 +1199,8 @@ static struct mpage *btree_get_mpage(struct btree *bt, pgno_t pgno) {
 static void concat_prefix(struct btree *bt, char *s1, size_t n1, char *s2,
                           size_t n2, char *cs, size_t *cn) {
   assert(*cn >= n1 + n2);
-  if (F_ISSET(bt->flags, BT_REVERSEKEY)) {
-    bcopy(s2, cs, n2);
-    bcopy(s1, cs + n2, n1);
-  } else {
-    bcopy(s1, cs, n1);
-    bcopy(s2, cs + n1, n2);
-  }
+  bcopy(s1, cs, n1);
+  bcopy(s2, cs + n1, n2);
   *cn = n1 + n2;
 }
 
@@ -2034,18 +1998,10 @@ static int btree_adjust_prefix(struct btree *bt, struct mpage *src, int delta) {
     node = NODEPTR(src, i);
     tmpkey.len = node->ksize - delta;
     if (delta > 0) {
-      if (F_ISSET(bt->flags, BT_REVERSEKEY))
-        bcopy(NODEKEY(node), tmpkey.str, tmpkey.len);
-      else
-        bcopy((char *)NODEKEY(node) + delta, tmpkey.str, tmpkey.len);
+      bcopy((char *)NODEKEY(node) + delta, tmpkey.str, tmpkey.len);
     } else {
-      if (F_ISSET(bt->flags, BT_REVERSEKEY)) {
-        bcopy(NODEKEY(node), tmpkey.str, node->ksize);
-        bcopy(src->prefix.str, tmpkey.str + node->ksize, -delta);
-      } else {
-        bcopy(src->prefix.str + src->prefix.len + delta, tmpkey.str, -delta);
-        bcopy(NODEKEY(node), tmpkey.str - delta, node->ksize);
-      }
+      bcopy(src->prefix.str + src->prefix.len + delta, tmpkey.str, -delta);
+      bcopy(NODEKEY(node), tmpkey.str - delta, node->ksize);
     }
     key.size = tmpkey.len;
     key.data = tmpkey.str;
@@ -2491,40 +2447,21 @@ static void bt_reduce_separator(struct btree *bt, struct node *min,
   char *p1;
   char *p2;
 
-  if (F_ISSET(bt->flags, BT_REVERSEKEY)) {
+  assert(min->ksize > 0);
+  assert(sep->size > 0);
 
-    assert(sep->size > 0);
+  p1 = (char *)NODEKEY(min);
+  p2 = (char *)sep->data;
 
-    p1 = (char *)NODEKEY(min) + min->ksize - 1;
-    p2 = (char *)sep->data + sep->size - 1;
-
-    while (p1 >= (char *)NODEKEY(min) && *p1 == *p2) {
-      assert(p2 > (char *)sep->data);
-      p1--;
-      p2--;
-      n++;
-    }
-
-    sep->data = p2;
-    sep->size = n + 1;
-  } else {
-
-    assert(min->ksize > 0);
-    assert(sep->size > 0);
-
-    p1 = (char *)NODEKEY(min);
-    p2 = (char *)sep->data;
-
-    while (*p1 == *p2) {
-      p1++;
-      p2++;
-      n++;
-      if (n == min->ksize || n == sep->size)
-        break;
-    }
-
-    sep->size = n + 1;
+  while (*p1 == *p2) {
+    p1++;
+    p2++;
+    n++;
+    if (n == min->ksize || n == sep->size)
+      break;
   }
+
+  sep->size = n + 1;
 
   DPRINTF("reduced separator to [%.*s] > [%.*s]", (int)sep->size,
           (char *)sep->data, (int)min->ksize, (char *)NODEKEY(min));

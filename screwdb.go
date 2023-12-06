@@ -32,9 +32,8 @@ import (
 type Flags uint
 
 const (
-	NoSync     Flags = C.BT_NOSYNC
-	ReadOnly   Flags = C.BT_RDONLY
-	ReverseKey Flags = C.BT_REVERSEKEY
+	NoSync   Flags = C.BT_NOSYNC
+	ReadOnly Flags = C.BT_RDONLY
 )
 
 type DB struct {
