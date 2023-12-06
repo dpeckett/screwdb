@@ -44,6 +44,8 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
+#include <openssl/sha.h>
+
 #include "sys_tree.h"
 
 #include "btree.h"
@@ -117,7 +119,7 @@ struct bt_meta {          /* meta (footer) page content */
   uint32_t revisions;
   uint32_t depth;
   uint64_t entries;
-  unsigned char hash[SHA_DIGEST_LENGTH];
+  unsigned char hash[SHA256_DIGEST_LENGTH];
 } __attribute__((packed));
 
 struct btkey {
@@ -751,7 +753,7 @@ static int btree_write_meta(struct btree *bt, pgno_t root, unsigned int flags) {
   bt->meta.flags = flags;
   bt->meta.created_at = time(0);
   bt->meta.revisions++;
-  SHA1((unsigned char *)&bt->meta, METAHASHLEN, bt->meta.hash);
+  SHA256((unsigned char *)&bt->meta, METAHASHLEN, bt->meta.hash);
 
   /* Copy the meta data changes to the new meta page. */
   meta = METADATA(mp->page);
@@ -774,7 +776,7 @@ static int btree_write_meta(struct btree *bt, pgno_t root, unsigned int flags) {
 /* Returns true if page p is a valid meta page, false otherwise. */
 static int btree_is_meta_page(struct page *p) {
   struct bt_meta *m;
-  unsigned char hash[SHA_DIGEST_LENGTH];
+  unsigned char hash[SHA256_DIGEST_LENGTH];
 
   m = METADATA(p);
   if (!F_ISSET(p->flags, P_META)) {
@@ -787,8 +789,8 @@ static int btree_is_meta_page(struct page *p) {
     return 0;
   }
 
-  SHA1((unsigned char *)m, METAHASHLEN, hash);
-  if (memcmp(hash, m->hash, SHA_DIGEST_LENGTH) != 0) {
+  SHA256((unsigned char *)m, METAHASHLEN, hash);
+  if (memcmp(hash, m->hash, SHA256_DIGEST_LENGTH) != 0) {
     errno = EINVAL;
     return 0;
   }

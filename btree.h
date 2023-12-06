@@ -35,7 +35,6 @@
 #define _btree_h_
 
 #include <sys/types.h>
-#include <openssl/sha.h>
 
 struct mpage;
 struct cursor;
