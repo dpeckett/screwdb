@@ -55,24 +55,8 @@ enum cursor_op {
 #define BT_NOSYNC 0x02     /* don't fsync after commit */
 #define BT_RDONLY 0x04     /* read only */
 
-struct btree_stat {
-  unsigned long long int hits;  /* cache hits */
-  unsigned long long int reads; /* page reads */
-  unsigned int max_cache;       /* max cached pages */
-  unsigned int cache_size;      /* current cache size */
-  unsigned int branch_pages;
-  unsigned int leaf_pages;
-  unsigned int overflow_pages;
-  unsigned int revisions;
-  unsigned int depth;
-  unsigned long long int entries;
-  unsigned int psize;
-  time_t created_at;
-};
-
 struct btree *btree_open(const char *path, unsigned int flags, mode_t mode);
 void btree_close(struct btree *bt);
-const struct btree_stat *btree_stat(struct btree *bt);
 
 struct btree_txn *btree_txn_begin(struct btree *bt, int rdonly);
 int btree_txn_commit(struct btree_txn *txn);

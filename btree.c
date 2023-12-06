@@ -203,7 +203,8 @@ struct btree {
   struct lru_queue *lru_queue;
   struct btree_txn *txn; /* current write transaction */
   int ref;               /* increased by cursors & txn */
-  struct btree_stat stat;
+  unsigned int cache_size;
+  unsigned int max_cache;
   off_t size; /* current file size */
 };
 
@@ -398,7 +399,6 @@ static struct mpage *mpage_lookup(struct btree *bt, pgno_t pgno) {
   find.pgno = pgno;
   mp = RB_FIND(page_cache, bt->page_cache, &find);
   if (mp) {
-    bt->stat.hits++;
     /* Update LRU queue. Move page to the end. */
     TAILQ_REMOVE(bt->lru_queue, mp, lru_next);
     TAILQ_INSERT_TAIL(bt->lru_queue, mp, lru_next);
@@ -408,7 +408,7 @@ static struct mpage *mpage_lookup(struct btree *bt, pgno_t pgno) {
 
 static void mpage_add(struct btree *bt, struct mpage *mp) {
   RB_INSERT(page_cache, bt->page_cache, mp);
-  bt->stat.cache_size++;
+  bt->cache_size++;
   TAILQ_INSERT_TAIL(bt->lru_queue, mp, lru_next);
 }
 
@@ -421,7 +421,7 @@ static void mpage_free(struct mpage *mp) {
 
 static void mpage_del(struct btree *bt, struct mpage *mp) {
   RB_REMOVE(page_cache, bt->page_cache, mp);
-  bt->stat.cache_size--;
+  bt->cache_size--;
   TAILQ_REMOVE(bt->lru_queue, mp, lru_next);
 }
 
@@ -460,7 +460,7 @@ static void mpage_prune(struct btree *bt) {
   struct mpage *mp, *next;
 
   for (mp = TAILQ_FIRST(bt->lru_queue); mp; mp = next) {
-    if (bt->stat.cache_size <= bt->stat.max_cache)
+    if (bt->cache_size <= bt->max_cache)
       break;
     next = TAILQ_NEXT(mp, lru_next);
     if (!mp->dirty && mp->ref <= 0) {
@@ -504,7 +504,6 @@ static struct mpage *mpage_touch(struct btree *bt, struct mpage *mp) {
 static int btree_read_page(struct btree *bt, pgno_t pgno, struct page *page) {
   ssize_t rc;
 
-  bt->stat.reads++;
   if ((rc = pread(bt->fd, page, bt->head.psize,
                   (off_t)pgno * bt->head.psize)) == 0) {
     errno = ENOENT;
@@ -909,7 +908,7 @@ struct btree *btree_open_fd(int fd, unsigned int flags) {
 
   if ((bt->page_cache = calloc(1, sizeof(*bt->page_cache))) == NULL)
     goto fail;
-  bt->stat.max_cache = BT_MAXCACHE_DEF;
+  bt->max_cache = BT_MAXCACHE_DEF;
   RB_INIT(bt->page_cache);
 
   if ((bt->lru_queue = calloc(1, sizeof(*bt->lru_queue))) == NULL)
@@ -2596,7 +2595,7 @@ int btree_revert(struct btree *bt) {
 }
 
 void btree_set_cache_size(struct btree *bt, unsigned int cache_size) {
-  bt->stat.max_cache = cache_size;
+  bt->max_cache = cache_size;
 }
 
 unsigned int btree_get_flags(struct btree *bt) {
@@ -2604,19 +2603,3 @@ unsigned int btree_get_flags(struct btree *bt) {
 }
 
 const char *btree_get_path(struct btree *bt) { return bt->path; }
-
-const struct btree_stat *btree_stat(struct btree *bt) {
-  if (bt == NULL)
-    return NULL;
-
-  bt->stat.branch_pages = bt->meta.branch_pages;
-  bt->stat.leaf_pages = bt->meta.leaf_pages;
-  bt->stat.overflow_pages = bt->meta.overflow_pages;
-  bt->stat.revisions = bt->meta.revisions;
-  bt->stat.depth = bt->meta.depth;
-  bt->stat.entries = bt->meta.entries;
-  bt->stat.psize = bt->head.psize;
-  bt->stat.created_at = bt->meta.created_at;
-
-  return &bt->stat;
-}

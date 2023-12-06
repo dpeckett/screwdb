@@ -58,14 +58,6 @@ func (db *DB) Close() error {
 	return nil
 }
 
-type Stat struct {
-	bs *C.struct_btree_stat
-}
-
-func (db *DB) Stat() *Stat {
-	return &Stat{C.btree_stat(db.bt)}
-}
-
 func (db *DB) SetCacheSize(cacheSize uint) {
 	C.btree_set_cache_size(db.bt, C.uint(cacheSize))
 }
