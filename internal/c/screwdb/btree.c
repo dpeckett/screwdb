@@ -208,7 +208,6 @@ struct btree {
   char *path;
 #define BT_FIXPADDING 0x01 /* internal */
   unsigned int flags;
-  bt_cmp_func cmp; /* user compare function */
   struct bt_head head;
   struct bt_meta meta;
   struct page_cache *page_cache;
@@ -318,7 +317,7 @@ static int memncmp(const void *s1, size_t n1, const void *s2, size_t n2) {
 }
 
 int btree_cmp(struct btree *bt, const struct btval *a, const struct btval *b) {
-  return bt->cmp(a, b);
+  return memncmp(a->data, a->size, b->data, b->size);
 }
 
 static void common_prefix(struct btree *bt, struct btkey *min,
@@ -350,7 +349,7 @@ static void common_prefix(struct btree *bt, struct btkey *min,
 }
 
 static void remove_prefix(struct btree *bt, struct btval *key, size_t pfxlen) {
-  if (pfxlen == 0 || bt->cmp != NULL) {
+  if (pfxlen == 0) {
     return;
   }
 
@@ -1007,13 +1006,8 @@ static struct node *btree_search_node(struct btree *bt, struct mpage *mp,
 
     nodekey.size = node->ksize;
     nodekey.data = NODEKEY(node);
-
-    if (bt->cmp) {
-      rc = bt->cmp(key, &nodekey);
-    } else {
-      rc = bt_cmp(bt, key, &nodekey, &mp->prefix);
-    }
-
+ 
+    rc = bt_cmp(bt, key, &nodekey, &mp->prefix);
     if (rc == 0) {
       break;
     }
@@ -1100,9 +1094,6 @@ static void find_common_prefix(struct btree *bt, struct mpage *mp) {
   struct btkey lprefix, uprefix;
 
   mp->prefix.len = 0;
-  if (bt->cmp != NULL) {
-    return;
-  }
 
   lp = mp;
   while (lp->parent != NULL) {
@@ -2332,7 +2323,7 @@ static int btree_split(struct btree *bt, struct mpage **mpp,
     sepkey.data = NODEKEY(node);
   }
 
-  if (IS_LEAF(mp) && bt->cmp == NULL) {
+  if (IS_LEAF(mp)) {
     /* Find the smallest separator. */
     /* Ref: Prefix B-trees, R. Bayer, K. Unterauer, 1977 */
     node = NODEPTRP(copy, split_indx - 1);
@@ -2340,13 +2331,11 @@ static int btree_split(struct btree *bt, struct mpage **mpp,
   }
 
   /* Fix separator wrt parent prefix. */
-  if (bt->cmp == NULL) {
-    tmpkey.len = sizeof(tmpkey.str);
-    concat_prefix(bt, mp->prefix.str, mp->prefix.len, sepkey.data, sepkey.size,
-                  tmpkey.str, &tmpkey.len);
-    sepkey.data = tmpkey.str;
-    sepkey.size = tmpkey.len;
-  }
+  tmpkey.len = sizeof(tmpkey.str);
+  concat_prefix(bt, mp->prefix.str, mp->prefix.len, sepkey.data, sepkey.size,
+                tmpkey.str, &tmpkey.len);
+  sepkey.data = tmpkey.str;
+  sepkey.size = tmpkey.len;
 
   /* Copy separator key to the parent. */
   if (SIZELEFT(pright->parent) < bt_branch_size(bt, &sepkey)) {

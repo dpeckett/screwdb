@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/dpeckett/screwdb"
+	"github.com/dpeckett/screwdb/internal/c/screwdb"
 	"github.com/stretchr/testify/require"
 )
 
