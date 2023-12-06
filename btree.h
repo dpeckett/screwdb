@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  * Based on btree.c from the ldapd project:
- * 
+ *
  * Copyright (c) 2009, 2010 Martin Hedenfalk <martin@bzero.se>
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -63,8 +63,8 @@ enum cursor_op {
 #define BT_SUCCESS 0
 
 /* btree flags */
-#define BT_NOSYNC 0x02     /* don't fsync after commit */
-#define BT_RDONLY 0x04     /* read only */
+#define BT_NOSYNC 0x02 /* don't fsync after commit */
+#define BT_RDONLY 0x04 /* read only */
 
 struct btree *btree_open(const char *path, unsigned int flags, mode_t mode);
 void btree_close(struct btree *bt);
